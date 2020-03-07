@@ -22,17 +22,16 @@ pub trait ResetValue {
 }
 
 ///This structure provides volatile access to register
-pub struct Reg<U, REG> {
-    register: vcell::VolatileCell<U>,
+pub struct Reg<REG> {
+    register: vcell::VolatileCell32,
     _marker: marker::PhantomData<REG>,
 }
 
-unsafe impl<U: Send, REG> Send for Reg<U, REG> { }
+unsafe impl<REG> Send for Reg<REG> { }
 
-impl<U, REG> Reg<U, REG>
+impl<REG> Reg<REG>
 where
     Self: Readable,
-    U: Copy
 {
     ///Reads the contents of `Readable` register
     ///
@@ -47,15 +46,14 @@ where
     ///let flag = reader.field2().bit_is_set();
     ///```
     #[inline(always)]
-    pub fn read(&self) -> R<U, Self> {
+    pub fn read(&self) -> R<u32, Self> {
         R {bits: self.register.get(), _reg: marker::PhantomData}
     }
 }
 
-impl<U, REG> Reg<U, REG>
+impl<REG> Reg<REG>
 where
-    Self: ResetValue<Type=U> + Writable,
-    U: Copy,
+    Self: ResetValue<Type=u32> + Writable,
 {
     ///Writes the reset value to `Writable` register
     ///
@@ -66,10 +64,9 @@ where
     }
 }
 
-impl<U, REG> Reg<U, REG>
+impl<REG> Reg<REG>
 where
-    Self: ResetValue<Type=U> + Writable,
-    U: Copy
+    Self: ResetValue<Type=u32> + Writable,
 {
     ///Writes bits to `Writable` register
     ///
@@ -89,16 +86,15 @@ where
     #[inline(always)]
     pub fn write<F>(&self, f: F)
     where
-        F: FnOnce(&mut W<U, Self>) -> &mut W<U, Self>
+        F: FnOnce(&mut W<u32, Self>) -> &mut W<u32, Self>
     {
         self.register.set(f(&mut W {bits: Self::reset_value(), _reg: marker::PhantomData}).bits);
     }
 }
 
-impl<U, REG> Reg<U, REG>
+impl<REG> Reg<REG>
 where
-    Self: Writable,
-    U: Copy + Default
+    Self: Writable
 {
     ///Writes Zero to `Writable` register
     ///
@@ -106,16 +102,15 @@ where
     #[inline(always)]
     pub fn write_with_zero<F>(&self, f: F)
     where
-        F: FnOnce(&mut W<U, Self>) -> &mut W<U, Self>
+        F: FnOnce(&mut W<u32, Self>) -> &mut W<u32, Self>
     {
-        self.register.set(f(&mut W {bits: U::default(), _reg: marker::PhantomData }).bits);
+        self.register.set(f(&mut W {bits: u32::default(), _reg: marker::PhantomData }).bits);
     }
 }
 
-impl<U, REG> Reg<U, REG>
+impl<REG> Reg<REG>
 where
     Self: Readable + Writable,
-    U: Copy,
 {
     ///Modifies the contents of the register
     ///
@@ -137,7 +132,7 @@ where
     #[inline(always)]
     pub fn modify<F>(&self, f: F)
     where
-        for<'w> F: FnOnce(&R<U, Self>, &'w mut W<U, Self>) -> &'w mut W<U, Self>
+        for<'w> F: FnOnce(&R<u32, Self>, &'w mut W<u32, Self>) -> &'w mut W<u32, Self>
     {
         let bits = self.register.get();
         self.register.set(f(&R {bits, _reg: marker::PhantomData}, &mut W {bits, _reg: marker::PhantomData}).bits);
